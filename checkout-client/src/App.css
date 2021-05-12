@@ -1,0 +1,50 @@
+.links {
+    display:flex;
+    justify-content: space-between;
+    flex-wrap:wrap;
+    margin: 30px;
+    padding:5px;
+}
+main {
+    padding: 15px;
+}
+.card {
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #FFF;
+    height:400px;
+    width:400px;
+    text-align:center;
+
+    padding: 30px;
+    border-radius: 4px;
+    box-shadow: 0 2px 3px #C8D0D8;
+    margin: 100px auto;
+}
+.result-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius:200px; 
+    height:200px; 
+    width:200px; 
+    background: #F8FAF5; 
+    margin:0 auto;
+}
+
+.result-box > h2 {
+    position: relative;
+    color: #88B04B;
+    font-weight: 900;
+    font-size: 40px;
+    margin:0;
+}
+ .card> p {
+    color: #404F5E;
+    font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
+    font-size:20px;
+    margin: 0;
+  }
+
+
