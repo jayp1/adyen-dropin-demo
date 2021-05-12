@@ -9,7 +9,7 @@ Node.js 8+
 1. Clone this repo:
 
 ```
-git clone https://github.com/adyen-examples/adyen-react-online-payments.git
+git clone https://github.com/jayp1/adyen-dropin-demo.git
 ```
 
 2. Navigate to the root directory and install dependencies for the server and client:
@@ -24,8 +24,8 @@ npm run install-dependencies
 
 ```
 API_KEY="your_API_key_here"
-MERCHANT_ACCOUNT="your_merchant_account_here"
-REACT_APP_CLIENT_KEY="your_client_key_here"
+MERCHANT_ACC="your_merchant_account_here"
+CLIENT_KEY="your_client_key_here"
 ```
 
 2. Build & Start the server:
