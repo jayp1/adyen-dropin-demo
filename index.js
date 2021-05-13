@@ -35,13 +35,19 @@ async function paymentMethods(formData) {
             "amount": { currency: formData.country, value: formData.payment_amount * 100 },
         },
     });
+    //console.log('------RESPONSE PAYMENT METHODS---------')
+    //console.log(JSON.stringify(response.data));
     return response.data;
 };
 
 // Initiate a payment request
-paymentRequest = async (data, ip) => {
+paymentRequest = async (data) => {
 
     const formData = { ...data.formData };
+
+    //console.log(`Payment Method : ${JSON.stringify(data.paymentMethod)}`);
+    //console.log(`BrowserInfo : ${JSON.stringify(data.browserInfo)}`);
+    
 
     const response = await axios({
         method: 'POST',
@@ -60,9 +66,10 @@ paymentRequest = async (data, ip) => {
             "browserInfo": data.browserInfo,
             "origin": `http://localhost:8000`,
             "shopperEmail": formData.email,
-            "shopperIP": ip,
         },
     });
+    //console.log('------RESPONSE PAYMENT REQUEST---------')
+    //console.log(JSON.stringify(response.data));
     return response.data;
 }
 
@@ -91,11 +98,11 @@ const paymentData = {};
 
 //Handle when Pay button is pressed.
 app.post('/api/paymentRequest', async (req, res) => {
-    const ip = req.headers['x-forwarded-for'];
+  
 
     try {
 
-        const paymentResponse = await paymentRequest(req.body, ip);
+        const paymentResponse = await paymentRequest(req.body);
 
         if (paymentResponse.action) {
 
@@ -123,7 +130,7 @@ app.all('/api/handleRedirect', async (req, res) => {
     payload["paymentData"] = paymentData[orderRef];
     delete payload.details["orderRef"];
     delete paymentData[orderRef];
-
+    //console.log("payment/details");
     //console.log(payload);
     try {
         const response = await axios({
@@ -164,7 +171,8 @@ app.post('/api/submitAdditionalDetails', async (req, res) => {
 
     payload["details"] = req.body.details;
     payload["paymentData"] = req.body.paymentData;
-
+    console.log('api/submitAdditional  -- payment/details')
+    //console.log(payload);
     try {
         const response = await axios({
             method: 'POST',
@@ -175,6 +183,8 @@ app.post('/api/submitAdditionalDetails', async (req, res) => {
             },
             data: payload,
         });
+
+        console.log(response.data);
 
         let resultCode = response.resultCode;
         let action = response.action || null;

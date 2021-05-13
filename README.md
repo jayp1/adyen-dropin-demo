@@ -20,7 +20,7 @@ npm run install-dependencies
 
 ## Usage
 
-1. Create a `./.env` file and add the following details:
+1. Create a `./.env` file and add the following environment variables:
 
 ```
 API_KEY="your_API_key_here"

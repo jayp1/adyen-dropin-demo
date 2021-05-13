@@ -20,6 +20,8 @@
 .env.production.local
 .env
 
+responses.txt
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
