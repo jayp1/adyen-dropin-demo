@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
+const uuid = require('uuid');
 
 const app = express();
 
@@ -9,13 +10,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded());
 
-if (process.env.NODE_ENV !== 'dev' ){
+if (process.env.NODE_ENV !== 'dev') {
     app.use(express.static(path.join(__dirname, "checkout-client/build")));
 }
-    
-console.log("Environment: "+ process.env.NODE_ENV);
 
-const payment_ref = 'Jarryd_checkoutChallenge';
+console.log("Environment: " + process.env.NODE_ENV);
+
 
 /* ##########################
     Adyen API Request Methods 
@@ -40,14 +40,16 @@ async function paymentMethods(formData) {
     return response.data;
 };
 
+//Need to store payment data
+const paymentData = {};
+
 // Initiate a payment request
-paymentRequest = async (data) => {
+const paymentRequest = async (data) => {
 
     const formData = { ...data.formData };
 
     //console.log(`Payment Method : ${JSON.stringify(data.paymentMethod)}`);
     //console.log(`BrowserInfo : ${JSON.stringify(data.browserInfo)}`);
-    
 
     const response = await axios({
         method: 'POST',
@@ -59,9 +61,9 @@ paymentRequest = async (data) => {
         data: {
             "merchantAccount": process.env.MERCHANT_ACC,
             "amount": { currency: formData.country, value: formData.payment_amount * 100 },
-            "reference": payment_ref,
+            "reference": data.payment_ref,
             "paymentMethod": data.paymentMethod,
-            "returnUrl": `http:localhost:8000/api/handleRedirect?orderRef=${payment_ref}`,
+            "returnUrl": `http:localhost:8000/api/handleRedirect?orderRef=${data.payment_ref}`,
             "channel": "Web",
             "browserInfo": data.browserInfo,
             "origin": `http://localhost:8000`,
@@ -73,15 +75,12 @@ paymentRequest = async (data) => {
     return response.data;
 }
 
-// End of Adyen API Request Methods
-
-
 /*  #####################################
     Start - Internal API Request Handlers 
     #####################################    */
 
 // Return to client all available payment methods.
-// Must include environment & client key too.
+
 app.post('/api/paymentMethods', async (req, res, next) => {
     try {
 
@@ -93,14 +92,13 @@ app.post('/api/paymentMethods', async (req, res, next) => {
         console.error(err);
     }
 });
-//Need to store payment data
-const paymentData = {};
 
 //Handle when Pay button is pressed.
 app.post('/api/paymentRequest', async (req, res) => {
-  
 
     try {
+        const payment_ref = uuid.v1();
+        req.body['payment_ref']= payment_ref;
 
         const paymentResponse = await paymentRequest(req.body);
 
@@ -115,7 +113,7 @@ app.post('/api/paymentRequest', async (req, res) => {
 
         res.send({ resultCode: paymentResponse.resultCode, action: paymentResponse.action })
     } catch (error) {
-        console.error(error.response.data);
+        console.error(error.response);
 
     }
 });
@@ -201,7 +199,6 @@ if (process.NODE_ENV !== 'dev') {
     });
 
 }
-
 
 
 // Start server
