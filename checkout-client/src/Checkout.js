@@ -39,7 +39,7 @@ const Checkout = (props) => {
                     <label htmlFor="country" className="form-label">Country</label>
                     <div className="country-amount">
                         <select className="form-select" onChange={handleChange} value={form.country} id="country" required>
-                            <option value="USA">United States</option>
+                            <option value="USD">United States</option>
                             <option value="EUR">Netherlands</option>
                         </select>
 

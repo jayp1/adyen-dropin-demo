@@ -6,8 +6,9 @@ const uuid = require('uuid');
 
 const app = express();
 
-//Middleware to read the body of a JSON object 
+//Parses json payloads into an object.
 app.use(express.json());
+//Parses urlencoded payloads - Strings and arrays.
 app.use(express.urlencoded());
 
 if (process.env.NODE_ENV !== 'dev') {
@@ -18,8 +19,13 @@ console.log("Environment: " + process.env.NODE_ENV);
 
 
 /* ##########################
-    Adyen API Request Methods 
-   ########################## */
+    
+   Adyen API Request Methods
+
+   ########################## 
+*/
+
+//Request available payment methods from Adyen.
 async function paymentMethods(formData) {
     const response = await axios({
         method: 'POST',
@@ -35,21 +41,17 @@ async function paymentMethods(formData) {
             "amount": { currency: formData.country, value: formData.payment_amount * 100 },
         },
     });
-    //console.log('------RESPONSE PAYMENT METHODS---------')
-    //console.log(JSON.stringify(response.data));
+    
     return response.data;
 };
 
-//Need to store payment data
+//Need to store payment data - (Usually this would be the DB)
 const paymentData = {};
 
-// Initiate a payment request
+// Initiate a payment request to Adyen
 const paymentRequest = async (data) => {
 
     const formData = { ...data.formData };
-
-    //console.log(`Payment Method : ${JSON.stringify(data.paymentMethod)}`);
-    //console.log(`BrowserInfo : ${JSON.stringify(data.browserInfo)}`);
 
     const response = await axios({
         method: 'POST',
@@ -70,20 +72,24 @@ const paymentRequest = async (data) => {
             "shopperEmail": formData.email,
         },
     });
-    //console.log('------RESPONSE PAYMENT REQUEST---------')
-    //console.log(JSON.stringify(response.data));
+    
+    
     return response.data;
 }
 
+/* End of Adyen API REQUEST METHODS */
+
+
 /*  #####################################
+    
     Start - Internal API Request Handlers 
-    #####################################    */
+
+    ##################################### 
+*/
 
 // Return to client all available payment methods.
-
 app.post('/api/paymentMethods', async (req, res, next) => {
     try {
-
         const paymentMethod = await paymentMethods(req.body);
         const response = { response: paymentMethod, clientKey: process.env.CLIENT_KEY };
         res.send(response);
@@ -93,43 +99,47 @@ app.post('/api/paymentMethods', async (req, res, next) => {
     }
 });
 
-//Handle when Pay button is pressed.
+/**
+ * Make Adyen payment request with state.data
+ */
 app.post('/api/paymentRequest', async (req, res) => {
 
     try {
         const payment_ref = uuid.v1();
         req.body['payment_ref']= payment_ref;
-
+        
         const paymentResponse = await paymentRequest(req.body);
 
+        // If action is redirect then store the paymentData in the data store.
         if (paymentResponse.action) {
 
             if (paymentResponse.action.type === 'redirect') {
                 paymentData[payment_ref] = paymentResponse.action.paymentData;
             }
         }
-        //console.log("ResultCode: "+paymentResponse.resultCode);
-        // console.log("Action: " + (paymentResponse.action ? JSON.stringify(paymentResponse.action) : "none") );
 
         res.send({ resultCode: paymentResponse.resultCode, action: paymentResponse.action })
+    
     } catch (error) {
         console.error(error.response);
 
     }
 });
 
+/**
+     * Make an Adyen Request for additional payment details.
+     * More info on Adyen documentation.
+*/
 
 app.all('/api/handleRedirect', async (req, res) => {
     const payload = {};
     payload["details"] = req.method === 'GET' ? req.query : req.body;
 
-    //console.log(req.method);
     const orderRef = req.query.orderRef;
     payload["paymentData"] = paymentData[orderRef];
     delete payload.details["orderRef"];
     delete paymentData[orderRef];
-    //console.log("payment/details");
-    //console.log(payload);
+
     try {
         const response = await axios({
             method: 'POST',
@@ -141,6 +151,7 @@ app.all('/api/handleRedirect', async (req, res) => {
             data: payload,
         });
         console.log(response.data);
+        
         switch (response.data.resultCode) {
             case 'Authorised':
                 res.redirect('http://localhost:8000/success');
@@ -161,16 +172,19 @@ app.all('/api/handleRedirect', async (req, res) => {
 
     } catch (error) {
         console.error(error.response.data);
+
     }
 });
 
+/**
+ * Submit additional details if required by front-end state.
+ */
 app.post('/api/submitAdditionalDetails', async (req, res) => {
     const payload = {};
 
     payload["details"] = req.body.details;
     payload["paymentData"] = req.body.paymentData;
-    console.log('api/submitAdditional  -- payment/details')
-    //console.log(payload);
+
     try {
         const response = await axios({
             method: 'POST',
@@ -182,12 +196,11 @@ app.post('/api/submitAdditionalDetails', async (req, res) => {
             data: payload,
         });
 
-        console.log(response.data);
-
         let resultCode = response.resultCode;
         let action = response.action || null;
 
-        res.json({ resultCode, action });
+        res.send({ resultCode, action });
+
     } catch (error) {
         console.error(error);
     }

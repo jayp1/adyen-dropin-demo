@@ -59,8 +59,6 @@ async function initDropIn(form) {
 
 async function initiatePayment(state, dropin) {
     try {
-        //console.log(JSON.stringify(state.data));
-        //state.data.formData = {...formData};
         const response = await fetch('/api/paymentRequest', {
             method: "POST",
             headers: {
@@ -78,7 +76,7 @@ async function initiatePayment(state, dropin) {
 
 async function additionalDetails(state, dropin) {
     try {
-        //console.log(JSON.stringify(state.data));
+        
         const response = await fetch('/api/submitAdditionalDetails', {
             method: "POST",
             headers: {
@@ -95,11 +93,12 @@ async function additionalDetails(state, dropin) {
 }
 
 function handleServerResponse(response, dropin) {
-    console.log(response);
+
     if (response.action) {
         dropin.handleAction(response.action);
     } else {
         console.log(response.resultCode);
+        
         switch (response.resultCode) {
             case 'Authorised':
                 window.location.href = "/success";
