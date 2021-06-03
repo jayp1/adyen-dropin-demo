@@ -8,7 +8,7 @@ const app = express();
 
 //Parses json payloads into an object.
 app.use(express.json());
-//Parses urlencoded payloads - Strings and arrays.
+//Parses urlencoded payloads.
 app.use(express.urlencoded());
 
 if (process.env.NODE_ENV !== 'dev') {
@@ -25,7 +25,9 @@ console.log("Environment: " + process.env.NODE_ENV);
    ########################## 
 */
 
-//Request available payment methods from Adyen.
+/** Initiate a POST Adyen payment methods request 
+ *  Pass client side form.
+*/
 async function paymentMethods(formData) {
     const response = await axios({
         method: 'POST',
@@ -76,6 +78,22 @@ const paymentRequest = async (data) => {
     
     return response.data;
 }
+
+// Initiate a POST request to Adyen payment/details
+const paymentDetails = async (payload) => {
+    
+    const response = await axios({
+        method: 'POST',
+        url: "https://checkout-test.adyen.com/v66/payments/details",
+        headers: {
+            "X-API-Key": process.env.API_KEY,
+            "Content-type": "application/json"
+        },
+        data: payload,
+    });
+    return response.data;
+}
+
 
 /* End of Adyen API REQUEST METHODS */
 
@@ -141,18 +159,10 @@ app.all('/api/handleRedirect', async (req, res) => {
     delete paymentData[orderRef];
 
     try {
-        const response = await axios({
-            method: 'POST',
-            url: "https://checkout-test.adyen.com/v66/payments/details",
-            headers: {
-                "X-API-Key": process.env.API_KEY,
-                "Content-type": "application/json"
-            },
-            data: payload,
-        });
-        console.log(response.data);
+        const response = await paymentDetails(payload);
+        console.log(response);
         
-        switch (response.data.resultCode) {
+        switch (response.resultCode) {
             case 'Authorised':
                 res.redirect('http://localhost:8000/success');
                 break;
@@ -171,7 +181,7 @@ app.all('/api/handleRedirect', async (req, res) => {
 
 
     } catch (error) {
-        console.error(error.response.data);
+        console.error(error.response);
 
     }
 });
@@ -186,15 +196,7 @@ app.post('/api/submitAdditionalDetails', async (req, res) => {
     payload["paymentData"] = req.body.paymentData;
 
     try {
-        const response = await axios({
-            method: 'POST',
-            url: "https://checkout-test.adyen.com/v66/payments/details",
-            headers: {
-                "X-API-Key": process.env.API_KEY,
-                "Content-type": "application/json"
-            },
-            data: payload,
-        });
+        const response = await paymentDetails(payload);
 
         let resultCode = response.resultCode;
         let action = response.action || null;
